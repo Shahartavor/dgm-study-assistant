@@ -1,0 +1,7 @@
+langchain>=0.3
+langchain-community>=0.3
+langchain-ollama>=0.1.0
+gradio>=4.0
+python-dotenv>=1.0
+pydantic>=2.7
+pydantic-settings>=2.4
