@@ -9,4 +9,4 @@ The assistant can explain concepts, answer questions, and help with code example
 * Normalizing Flows
 * Diffusion Models
 * Monte Carlo Methods
-And additional topics taught throughout the course
+* And additional topics taught throughout the course
