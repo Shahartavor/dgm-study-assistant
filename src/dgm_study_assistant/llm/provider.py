@@ -1,12 +1,10 @@
 from langchain_ollama import ChatOllama
-from langchain_openai import ChatOpenAI
-from src.config import settings
+from dgm_study_assistant.config import settings
 
 
 def get_llm():
     provider = settings.llm_provider.lower()
 
-    # --- Ollama ---
     if provider == "ollama":
         return ChatOllama(model=settings.llm_model)
 

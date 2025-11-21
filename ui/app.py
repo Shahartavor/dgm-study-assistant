@@ -1,19 +1,17 @@
 import gradio as gr
-from src.llm.provider import get_llm
+from dgm_study_assistant.llm.provider import get_llm
 
 llm = get_llm()
 
 def chat_fn(message, history):
-    response = llm.invoke(message)
-    history.append((message, response.content))
+    resp = llm.invoke(message)
+    history = history + [(message, resp.content)]
     return history, history
 
-
 with gr.Blocks() as demo:
-    gr.Markdown("# **DGM Study Assistant (Simple Chatbot)**")
-
+    gr.Markdown("# DGM Study Assistant")
     chatbot = gr.Chatbot()
-    msg = gr.Textbox(placeholder="Ask me anything about EM, GMM, VAEs...")
+    msg = gr.Textbox(placeholder="Ask about EM, GMM, VAEs...")
 
     def user_submit(user_message, chat_history):
         return "", chat_history + [[user_message, None]]
