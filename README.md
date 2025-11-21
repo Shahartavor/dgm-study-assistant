@@ -11,29 +11,44 @@ The assistant can explain concepts, answer questions, and help with code example
 * Monte Carlo Methods
 * And additional topics taught throughout the course
 
+## Installation 
+**Install uv**
 
-### Install uv
 uv is a fast Python package and environment manager that replaces pip, venv, and pip-tools.
-macOS & Linux:
-curl -LsSf https://astral.sh/uv/install.sh | sh
-Then reload your shell:
-source ~/.zshrc  # or ~/.bashrc
-macOS (Homebrew alternative)
-brew install uv
-Windows (PowerShell)
-powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
-Verify Installation
-uv --version
+macOS & Linux: 
 
-# Create and activate virtual environment
+`curl -LsSf https://astral.sh/uv/install.sh | sh`
+
+Then reload your shell: 
+
+`source ~/.zshrc  # or ~/.bashrc`
+
+macOS (Homebrew alternative):
+
+`brew install uv`
+
+Windows (PowerShell):
+
+`powershell -c "irm https://astral.sh/uv/install.ps1 | iex"`
+
+Verify Installation:
+
+`uv --version`
+
+**Create and activate virtual environment**
+```
 uv venv
 source .venv/bin/activate  # or .venv\Scripts\activate on Windows
+```
 
-# Install project
-uv pip install -e .
+**Install project**
 
-# Copy environment template
-cp .env.example .env
+`uv pip install -e .`
 
-# Run Gradio app
-uv run ui/app.py
+**Copy environment template**
+
+`cp .env.example .env`
+
+**Run Gradio app**
+
+`uv run ui/app.py`
