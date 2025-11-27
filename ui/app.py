@@ -2,7 +2,13 @@ import gradio as gr
 from dgm_study_assistant.llm.provider import get_llm
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 
+from dgm_study_assistant.rag.loader import build_rag_chain
+
 llm = get_llm()
+rag_chain = build_rag_chain(llm)
+def answer(query):
+    return rag_chain.invoke({"question": query})
+
 
 _SYSTEM_MESSAGE = SystemMessage(content="""
 You are a helpful assistant specialized in Deep Generative Models (DGM).
@@ -30,14 +36,20 @@ def respond(message: str, history: list):
         yield full_response
 
 
+query_box = gr.Textbox(
+    label="query",
+    lines=2,          # how tall the input box is
+    placeholder="Ask about VAEs, GANs, Diffusion, EM, GMMs..."
+)
 
-gr.ChatInterface(
-    fn=respond,
-    type="messages",
+output_box = gr.Textbox(
+    label="output",
+    lines=12,         # make this big so you can see the whole answer
+)
+
+gr.Interface(
+    fn=answer,
+    inputs=query_box,
+    outputs=output_box,
     title="DGM Study Assistant",
-    description="Expert tutor for Deep Generative Models — VAEs, GANs, Diffusion, Flows, EM & more. Clear answers with examples and math.",
-    chatbot=gr.Chatbot(type="messages", height=300),
-    textbox=gr.Textbox(placeholder="Ask me anything about VAEs, GANs, Diffusion Models, EM algorithm...", label="Your question"),
-    submit_btn="Send",
-    autofocus=True,
 ).launch()

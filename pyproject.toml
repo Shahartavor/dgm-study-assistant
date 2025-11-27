@@ -23,6 +23,7 @@ dependencies = [
   "pydantic>=2.7",
   "pydantic-settings>=2.4",
   "python-dotenv>=1.0",
+   "faiss-cpu>=1.7.4"
 ]
 
 [tool.hatch.build]
