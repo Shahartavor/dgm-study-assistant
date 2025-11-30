@@ -15,15 +15,15 @@ authors = [
 ]
 
 dependencies = [
-  "langchain>=0.3",
-  "langchain-community>=0.3",
-  "langchain-ollama>=0.1.0",
-  "langchain-openai>=0.1.0",
-  "gradio>=4.0",
-  "pydantic>=2.7",
-  "pydantic-settings>=2.4",
-  "python-dotenv>=1.0",
-   "faiss-cpu>=1.7.4"
+    "langchain>=0.3",
+    "langchain-community>=0.3",
+    "langchain-ollama>=0.1.0",
+    "langchain-openai>=0.1.0",
+    "gradio>=4.0",
+    "pydantic>=2.7",
+    "pydantic-settings>=2.4",
+    "python-dotenv>=1.0",
+    "faiss-cpu>=1.7.4"
 ]
 
 [tool.hatch.build]
