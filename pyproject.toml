@@ -23,7 +23,9 @@ dependencies = [
     "pydantic>=2.7",
     "pydantic-settings>=2.4",
     "python-dotenv>=1.0",
-    "faiss-cpu>=1.7.4"
+    "faiss-cpu>=1.7.4",
+    "pypdf",
+    "pdf2image>=1.17.0",
 ]
 
 [tool.hatch.build]

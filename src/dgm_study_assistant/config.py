@@ -2,8 +2,8 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     llm_provider: str = "ollama"
-    llm_model: str = "granite4:micro"
-
+    #llm_model: str = "granite4:micro"
+    llm_model: str  = "phi3:mini"
     llm_temperature: float = 0.1
     llm_timeout: int = 300
     llm_max_tokens: int = 4096

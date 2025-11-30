@@ -4,6 +4,8 @@ from dgm_study_assistant.llm.provider import get_llm
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from dgm_study_assistant.rag.loader import build_rag_chain
 
+from dgm_study_assistant.rag.loader import get_slide_image_from_metadata
+
 SYSTEM_MESSAGE = SystemMessage(content="""
 You are a helpful assistant specialized in Deep Generative Models (DGM).
 Focus on topics such as VAEs, GANs, Diffusion Models, Normalizing Flows, EM algorithm, GMMs, latent variable models, and score-based methods.
@@ -86,48 +88,37 @@ def add_user_message(message, history):
     history.append([message, None])
     return history, ""
 
+
 def get_bot_response(history):
-    """AI response with chat history context and RAG integration."""
     if not history or history[-1][1] is not None:
-        return history
-    
+        return history, None
+
     user_message = history[-1][0]
-    
-    # First get RAG context for the current question
-    rag_context = rag_chain.invoke({"question": user_message})
-    
-    # Build conversation context from history
-    messages = [SYSTEM_MESSAGE]
-    
-    # Add previous conversation turns (excluding the current incomplete one)
-    for user_msg, bot_msg in history[:-1]:
-        if user_msg and bot_msg:  # Only add complete exchanges
-            messages.append(HumanMessage(content=user_msg))
-            messages.append(AIMessage(content=bot_msg))
-    
-    # Always add the current user message to maintain conversation flow
-    messages.append(HumanMessage(content=user_message))
-    
-    # Add RAG context as additional context, not as replacement
-    if rag_context and rag_context.strip():
-        context_message = HumanMessage(content=f"""Additional context from course materials that might be relevant:
 
-{rag_context}
+    # Run the full RAG chain
+    result = rag_chain.invoke({"question": user_message})
 
-Please use this context if relevant to answer the question, but prioritize our conversation history for understanding what the user is asking about.""")
-        messages.append(context_message)
-    
-    # Generate response
-    full_response = ""
-    for chunk in llm.stream(messages):
-        full_response += chunk.content
-    
-    history[-1][1] = full_response
-    return history
+    answer = result["answer"]  # LLM output
+    docs = result["docs"]  # retrieved documents
+    for doc in docs:
+        print(doc.metadata)
+        print(doc.page_content[:200])
+        print("-------------------------")
+    # Update chatbot text
+    history[-1][1] = answer
+
+    # Try to find a slide image
+    slide_image = None
+    for doc in docs:
+        slide_image = get_slide_image_from_metadata(doc.metadata)
+        if slide_image:
+            break
+
+    return history, slide_image
 
 def clear_chat():
     """Clear chat history and reset input box."""
-    return [], ""
+    return [], "", None
 
 def get_random_recommendations(num=5):
     """Get (random) sample of recommended questions."""
@@ -141,6 +132,7 @@ def refresh_recommendations():
     """Generate new set of random recommendations."""
     new_questions = get_random_recommendations(6)
     return [gr.update(value=q) for q in new_questions]
+
 
 def create_interface():
     """Create the main Gradio interface."""
@@ -161,7 +153,12 @@ def create_interface():
                     render_markdown=True,
                 show_share_button=False
                 )
-                
+                slide_viewer = gr.Image(
+                    label="Relevant Slide",
+                    visible=False,
+                    height=350,
+                    interactive=False
+                )
                 # Input area
                 with gr.Row():
                     query_box = gr.Textbox(
@@ -196,12 +193,12 @@ def create_interface():
                 refresh_btn = gr.Button("🔄 New Questions", size="sm", variant="outline")
         
         # Wire up event handlers
-        _setup_event_handlers(submit_btn, query_box, chatbot, clear_btn, 
+        _setup_event_handlers(submit_btn, query_box, chatbot,slide_viewer, clear_btn,
                              recommendation_buttons, refresh_btn)
     
     return demo
 
-def _setup_event_handlers(submit_btn, query_box, chatbot, clear_btn, 
+def _setup_event_handlers(submit_btn, query_box, chatbot, slide_viewer,clear_btn,
                          recommendation_buttons, refresh_btn):
     """Configure all event handlers for the interface."""
     # Submit handlers (both button and Enter key)
@@ -212,7 +209,7 @@ def _setup_event_handlers(submit_btn, query_box, chatbot, clear_btn,
     ).then(
         fn=get_bot_response,
         inputs=[chatbot],
-        outputs=[chatbot]
+        outputs=[chatbot,slide_viewer]
     )
     
     query_box.submit(
@@ -222,13 +219,13 @@ def _setup_event_handlers(submit_btn, query_box, chatbot, clear_btn,
     ).then(
         fn=get_bot_response,
         inputs=[chatbot],
-        outputs=[chatbot]
+        outputs=[chatbot,slide_viewer]
     )
     
     # Clear chat handler
     clear_btn.click(
         fn=clear_chat,
-        outputs=[chatbot, query_box]
+        outputs=[chatbot, query_box,slide_viewer]
     )
     
     # Recommendation button handlers
