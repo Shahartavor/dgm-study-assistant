@@ -11,6 +11,9 @@ The assistant can explain concepts, answer questions, and help with code example
 * Monte Carlo Methods
 * And additional topics taught throughout the course
 
+<img width="700" height="700" alt="dgm_flow" src="https://github.com/user-attachments/assets/479f50df-ca18-49d2-9073-d62b987103a5" />
+
+
 ## Installation 
 **Install uv**
 
