@@ -140,9 +140,9 @@ def build_rag_chain(llm):
     except Exception:
         print("FAISS not found, building...")
         transcript_docs = load_transcripts()
-        #slides_docs = load_slides()
-        #docs = transcript_docs + slides_docs
-        docs = transcript_docs
+        slides_docs = load_slides()
+        docs = transcript_docs + slides_docs
+        #docs = transcript_docs
         chunks = split_docs(docs)
         vectorstore = build_vectorstore(chunks, embedding_model,save_path)
 
