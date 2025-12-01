@@ -16,7 +16,7 @@ def get_llm():
         )
 
     elif provider == "openai":
-        return ChatNVIDIA(
+        return ChatOpenAI(
             model=settings.llm_model,
             api_key=settings.openai_api_key,
             temperature=settings.llm_temperature,

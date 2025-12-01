@@ -90,8 +90,10 @@ def add_user_message(message, history):
 
 
 def get_bot_response(history):
+    # If there's no new user message waiting for an answer, do nothing
     if not history or history[-1][1] is not None:
-        return history, None
+        # Also make sure slide is hidden in this "no-op" case
+        return history, gr.update(visible=False, value=None)
 
     user_message = history[-1][0]
 
@@ -99,26 +101,37 @@ def get_bot_response(history):
     result = rag_chain.invoke({"question": user_message})
 
     answer = result["answer"]  # LLM output
-    docs = result["docs"]  # retrieved documents
+    docs = result["docs"]      # retrieved documents
+
+    # Debug prints (optional)
     for doc in docs:
         print(doc.metadata)
         print(doc.page_content[:200])
         print("-------------------------")
-    # Update chatbot text
+
+    # Update chatbot last message with the answer
     history[-1][1] = answer
 
     # Try to find a slide image
-    slide_image = None
+    slide_path = None
     for doc in docs:
-        slide_image = get_slide_image_from_metadata(doc.metadata)
-        if slide_image:
+        slide_path = get_slide_image_from_metadata(doc.metadata)
+        if slide_path:
             break
 
-    return history, slide_image
+    if slide_path:
+        # Show the image + set value
+        slide_update = gr.update(visible=True, value=slide_path)
+    else:
+        # Hide the component + clear any previous image
+        slide_update = gr.update(visible=False, value=None)
+
+    return history, slide_update
+
 
 def clear_chat():
     """Clear chat history and reset input box."""
-    return [], "", None
+    return [], "", gr.update(visible=False, value=None)
 
 def get_random_recommendations(num=5):
     """Get (random) sample of recommended questions."""

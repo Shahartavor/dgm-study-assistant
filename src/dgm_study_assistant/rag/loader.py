@@ -103,7 +103,7 @@ def load_vectorstore(embeddings, save_path="faiss_index"):
 def create_retriever(vectorstore):
     return vectorstore.as_retriever(
         search_type="similarity",
-        k=4
+        k=7
     )
 
 def format_docs(docs):
@@ -129,19 +129,22 @@ def get_slide_image_from_metadata(metadata):
     return None
 
 
+
 def build_rag_chain(llm):
     embedding_model = get_embeddings()
-
+    #save_path = "faiss_index_transcripts"
+    save_path = "faiss_index"
     try:
         print("Loading existing FAISS index...")
-        vectorstore = load_vectorstore(embedding_model)
+        vectorstore = load_vectorstore(embedding_model,save_path)
     except Exception:
         print("FAISS not found, building...")
         transcript_docs = load_transcripts()
-        slides_docs = load_slides()
-        docs = transcript_docs + slides_docs
+        #slides_docs = load_slides()
+        #docs = transcript_docs + slides_docs
+        docs = transcript_docs
         chunks = split_docs(docs)
-        vectorstore = build_vectorstore(chunks, embedding_model)
+        vectorstore = build_vectorstore(chunks, embedding_model,save_path)
 
     retriever = create_retriever(vectorstore)
     #create_retriever
@@ -174,7 +177,7 @@ def build_rag_chain(llm):
             })
             |
             RunnableMap({
-                "context": lambda x: format_docs(x["docs"]),
+                "context": lambda x:format_docs(x["docs"]),
                 "docs": itemgetter("docs"),
                 "question": itemgetter("question")
             })
