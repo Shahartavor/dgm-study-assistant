@@ -164,7 +164,11 @@ def create_interface():
                     show_copy_all_button=False,
                     bubble_full_width=False,
                     render_markdown=True,
-                show_share_button=False
+                    latex_delimiters=[
+                        {"left": "$$", "right": "$$", "display": True},
+                        {"left": "$", "right": "$", "display": False}
+                    ],
+                    show_share_button=False
                 )
                 slide_viewer = gr.Image(
                     label="Relevant Slide",
