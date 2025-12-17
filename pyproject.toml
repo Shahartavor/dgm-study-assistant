@@ -26,7 +26,16 @@ dependencies = [
     "faiss-cpu>=1.7.4",
     "pypdf",
     "pdf2image>=1.17.0",
+    "ragas>=0.1.10",
+    "langchain-nvidia-ai-endpoints>=0.1.0",
+    "datasets>=2.0.0",
+    "nest-asyncio>=1.5.0",
+    "pandas>=1.5.0",
+    "rapidfuzz>=3.0.0",
 ]
+
+[project.scripts]
+dgm-evaluate = "evaluate_rag:main"
 
 [tool.hatch.build]
 packages = ["src/dgm_study_assistant"]
