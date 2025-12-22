@@ -1,7 +1,4 @@
-"""
-RAG Evaluator using RAGAS framework with custom metrics.
-Implements structured output evaluation and domain-specific scoring.
-"""
+"""RAG evaluator built on RAGAS metrics."""
 
 import asyncio
 import nest_asyncio
@@ -19,10 +16,7 @@ asyncio.set_event_loop_policy(asyncio.DefaultEventLoopPolicy())
 
 
 class RAGEvaluator:
-    """
-    Main RAG evaluator using RAGAS metrics with custom scoring.
-    Implements structured evaluation with domain-specific criteria.
-    """
+    """Evaluate a RAG chain using a small set of RAGAS metrics."""
     
     def __init__(self, judge_llm, embedding_model, rag_chain):
         """
@@ -48,6 +42,17 @@ class RAGEvaluator:
                 embeddings=self.embedding_model
             ),
             'context_precision': ContextPrecision(llm=self.judge_llm)
+        }
+
+
+    def _run_rag(self, question: str) -> Dict[str, Any]:
+        result = self.rag_chain.invoke({"question": question})
+        generated_answer = result["answer"]
+        retrieved_docs = result["docs"]
+        retrieved_contexts = [doc.page_content for doc in retrieved_docs]
+        return {
+            "generated_answer": generated_answer,
+            "retrieved_contexts": retrieved_contexts,
         }
     
     
@@ -106,6 +111,53 @@ class RAGEvaluator:
         except Exception as e:
             print(f"Error preparing evaluation data: {e}")
             return None
+
+
+    def prepare_evaluation_data_from_dataframe(
+        self,
+        df: pd.DataFrame,
+        question_col: str = "user_input",
+        reference_answer_col: str = "reference",
+        reference_contexts_col: str = "reference_contexts",
+        max_samples: Optional[int] = None,
+    ) -> Optional[EvaluationDataset]:
+        """Prepare an EvaluationDataset by running the RAG chain over questions.
+
+        The dataframe must contain question, reference answer, and reference
+        contexts columns, whose names can be customized via the parameters.
+        """
+        try:
+            if max_samples is not None:
+                df = df.head(max_samples)
+
+            evaluation_data: List[Dict[str, Any]] = []
+            for idx, row in df.iterrows():
+                question = row[question_col]
+                reference_answer = row.get(reference_answer_col, "")
+                reference_contexts = row.get(reference_contexts_col, [])
+
+                print(f"Processing question {idx + 1}/{len(df)}: {str(question)[:60]}...")
+
+                try:
+                    rag_out = self._run_rag(str(question))
+                    evaluation_data.append({
+                        "user_input": str(question),
+                        "response": rag_out["generated_answer"],
+                        "reference": reference_answer if reference_answer is not None else "",
+                        "retrieved_contexts": rag_out["retrieved_contexts"],
+                        "reference_contexts": reference_contexts if reference_contexts is not None else [],
+                    })
+                except Exception as e:
+                    print(f"Error processing question {idx + 1}: {e}")
+                    continue
+
+            eval_df = pd.DataFrame(evaluation_data)
+            dataset = EvaluationDataset.from_pandas(eval_df)
+            print(f"Prepared {len(evaluation_data)} samples for evaluation")
+            return dataset
+        except Exception as e:
+            print(f"Error preparing evaluation data from dataframe: {e}")
+            return None
     
     def evaluate_dataset(self, evaluation_dataset: EvaluationDataset) -> Dict[str, Any]:
         """
@@ -127,38 +179,42 @@ class RAGEvaluator:
                 llm=self.judge_llm,
                 embeddings=self.embedding_model,
                 raise_exceptions=False,
-                is_async=False
             )
             
             # Convert results to pandas for analysis
             results_df = results.to_pandas()
+
+            # Ensure metrics are numeric; RAGAS can emit NaNs when a metric fails.
+            for col in ["context_recall", "faithfulness", "answer_relevancy", "context_precision"]:
+                if col in results_df.columns:
+                    results_df[col] = pd.to_numeric(results_df[col], errors="coerce")
             
             # Calculate summary statistics
             summary = {
                 'overall_results': {
                     'context_recall': {
-                        'mean': results_df['context_recall'].mean(),
-                        'std': results_df['context_recall'].std(),
-                        'min': results_df['context_recall'].min(),
-                        'max': results_df['context_recall'].max()
+                        'mean': results_df['context_recall'].dropna().mean(),
+                        'std': results_df['context_recall'].dropna().std(),
+                        'min': results_df['context_recall'].dropna().min(),
+                        'max': results_df['context_recall'].dropna().max()
                     },
                     'faithfulness': {
-                        'mean': results_df['faithfulness'].mean(),
-                        'std': results_df['faithfulness'].std(),
-                        'min': results_df['faithfulness'].min(),
-                        'max': results_df['faithfulness'].max()
+                        'mean': results_df['faithfulness'].dropna().mean(),
+                        'std': results_df['faithfulness'].dropna().std(),
+                        'min': results_df['faithfulness'].dropna().min(),
+                        'max': results_df['faithfulness'].dropna().max()
                     },
                     'answer_relevancy': {
-                        'mean': results_df['answer_relevancy'].mean(),
-                        'std': results_df['answer_relevancy'].std(),
-                        'min': results_df['answer_relevancy'].min(),
-                        'max': results_df['answer_relevancy'].max()
+                        'mean': results_df['answer_relevancy'].dropna().mean(),
+                        'std': results_df['answer_relevancy'].dropna().std(),
+                        'min': results_df['answer_relevancy'].dropna().min(),
+                        'max': results_df['answer_relevancy'].dropna().max()
                     },
                     'context_precision': {
-                        'mean': results_df['context_precision'].mean(),
-                        'std': results_df['context_precision'].std(),
-                        'min': results_df['context_precision'].min(),
-                        'max': results_df['context_precision'].max()
+                        'mean': results_df['context_precision'].dropna().mean(),
+                        'std': results_df['context_precision'].dropna().std(),
+                        'min': results_df['context_precision'].dropna().min(),
+                        'max': results_df['context_precision'].dropna().max()
                     }
                 },
                 'sample_count': len(results_df),
@@ -188,7 +244,12 @@ class RAGEvaluator:
             print(f"Error during evaluation: {e}")
             return None
     
-    def evaluate_single_sample(self, question: str, reference_answer: str = None) -> Dict[str, Any]:
+    def evaluate_single_sample(
+        self,
+        question: str,
+        reference_answer: Optional[str] = None,
+        reference_contexts: Optional[List[str]] = None,
+    ) -> Dict[str, Any]:
         """
         Evaluate a single question through the RAG pipeline.
         
@@ -200,13 +261,16 @@ class RAGEvaluator:
             Dictionary with evaluation metrics for this sample
         """
         try:
-            # Run RAG chain
-            result = self.rag_chain.invoke({"question": question})
-            generated_answer = result["answer"]
-            retrieved_docs = result["docs"]
-            
-            # Extract contexts
-            contexts = [doc.page_content for doc in retrieved_docs]
+            rag_out = self._run_rag(question)
+            generated_answer = rag_out["generated_answer"]
+            contexts = rag_out["retrieved_contexts"]
+
+            # Select only metrics that are supported by available fields.
+            selected_metrics = [self.metrics["faithfulness"], self.metrics["answer_relevancy"]]
+            if reference_answer:
+                selected_metrics.append(self.metrics["context_recall"])
+            if reference_contexts is not None:
+                selected_metrics.append(self.metrics["context_precision"])
             
             # Create evaluation dataset for single sample
             eval_data = pd.DataFrame([{
@@ -214,7 +278,7 @@ class RAGEvaluator:
                 'response': generated_answer,
                 'reference': reference_answer or "",
                 'retrieved_contexts': contexts,
-                'reference_contexts': contexts  # Use retrieved contexts as reference
+                'reference_contexts': reference_contexts if reference_contexts is not None else []
             }])
             
             dataset = EvaluationDataset.from_pandas(eval_data)
@@ -222,11 +286,10 @@ class RAGEvaluator:
             # Evaluate
             results = evaluate(
                 dataset=dataset,
-                metrics=list(self.metrics.values()),
+                metrics=selected_metrics,
                 llm=self.judge_llm,
                 embeddings=self.embedding_model,
                 raise_exceptions=False,
-                is_async=False
             )
             
             results_dict = results.to_pandas().iloc[0].to_dict()
@@ -262,13 +325,13 @@ class RAGEvaluator:
         print("="*60)
         
         if results and 'overall_results' in results:
-            print(f"\n📊 OVERALL PERFORMANCE")
+            print("\nOVERALL PERFORMANCE")
             print(f"Overall Score: {results['overall_score']:.3f}")
             print(f"Total Samples: {results['sample_count']}")
             
-            print(f"\n🔍 RAGAS METRICS")
+            print("\nRAGAS METRICS")
             for metric_name, metric_data in results['overall_results'].items():
-                print(f"{metric_name.replace('_', ' ').title():15s}: {metric_data['mean']:.3f} ± {metric_data['std']:.3f}")
+                print(f"{metric_name.replace('_', ' ').title():15s}: {metric_data['mean']:.3f} +/- {metric_data['std']:.3f}")
             
             print("\n" + "="*60)
         else:

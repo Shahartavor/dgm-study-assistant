@@ -1,102 +1,62 @@
-# RAG Evaluation with Custom RAGAS Implementation
+# RAG Evaluation
 
-This dedicated evaluation folder provides comprehensive RAG system evaluation using customized RAGAS framework with domain-specific prompts and metrics for Deep Generative Models.
+This folder contains a small CLI and helpers for evaluating the Study Assistant RAG pipeline using RAGAS.
 
-## 📁 Folder Structure
+It focuses on synthetic evaluation (SDG): generate questions from your own documents, run your RAG system, then score.
 
-```
-evaluation/
-├── src/
-│   ├── __init__.py              # Package exports
-│   ├── synthetic_generator.py   # Custom RAGAS synthetic data generation
-│   └── evaluator.py            # Main RAGAS evaluation with custom metrics
-├── evaluate_rag.py             # Main evaluation script
-├── requirements.txt            # Evaluation dependencies
-└── README.md                   # This file
-```
+## Prerequisites
 
-## 🚀 Quick Start
+- A built FAISS index at `faiss_index/` in the repository root.
+- A working LLM + embedding configuration (from your normal app settings).
 
-### 1. Install Dependencies
+## Usage
+
+Run from the repository root.
+
+### Synthetic evaluation
+
 ```bash
-cd evaluation
-pip install -r requirements.txt
+uv run src/dgm_study_assistant/evaluation/evaluate_rag.py -n 10 --save-results evaluation_results_synth.json
 ```
 
-### 2. Basic Evaluation (10 samples)
+Optionally save and reuse a generated synthetic set:
+
 ```bash
-python evaluate_rag.py --samples 10
+uv run src/dgm_study_assistant/evaluation/evaluate_rag.py -n 15 --save-synthetic synthetic_data.json --save-results results.json
+uv run src/dgm_study_assistant/evaluation/evaluate_rag.py --load-synthetic synthetic_data.json --save-results results_rerun.json
 ```
 
-### 3. Full Evaluation (20 samples with saved results)
+### Single question
+
 ```bash
-python evaluate_rag.py --samples 20 --save-results my_evaluation.json
+uv run src/dgm_study_assistant/evaluation/evaluate_rag.py --question "What is the ELBO in variational autoencoders?"
 ```
 
-### 4. Test Single Question
-```bash
-python evaluate_rag.py --question "What is the ELBO in variational autoencoders?"
-```
-
-## 📋 Detailed Usage
-
-### Complete Evaluation Workflow
-```bash
-# Run evaluation with synthetic data generation
-python evaluate_rag.py --samples 15 --save-synthetic synthetic_data.json --save-results results.json
-
-# Reuse existing synthetic dataset (faster)
-python evaluate_rag.py --load-synthetic synthetic_data.json --save-results new_results.json
-```
-
-### Command Line Options
+## CLI options
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `--samples`, `-n` | Number of synthetic samples to generate | 10 |
-| `--question`, `-q` | Evaluate single question instead of full dataset | None |
-| `--save-synthetic` | Save synthetic dataset to JSON file | None |
-| `--load-synthetic` | Load existing synthetic dataset | None |
-| `--save-results` | Save evaluation results | `evaluation_results.json` |
+| `--samples`, `-n` | synthetic samples to generate | 10 |
+| `--save-synthetic` | save synthetic dataset to JSON | None |
+| `--load-synthetic` | load an existing synthetic dataset JSON | None |
+| `--save-results` | save evaluation results JSON | `evaluation_results.json` |
+| `--question`, `-q` | run a single question instead of a dataset | None |
 
-## 🔧 Prerequisites
+## Metrics
 
-1. **RAG System Setup**: Ensure your main RAG system is working and has a built FAISS index at `../faiss_index/`
-2. **Environment Configuration**: Your `.env` file should be configured with LLM settings
-3. **Dependencies**: Run `pip install -r requirements.txt` in this directory
+The evaluator currently computes these RAGAS metrics:
 
-## 📊 Evaluation Metrics
+- Context Recall
+- Faithfulness
+- Answer Relevancy
+- Context Precision
 
-The system evaluates 5 metrics:
+The CLI prints per-metric mean/std across samples and a simple weighted overall score.
 
-### Core RAGAS Metrics
-- **Context Recall** (20% weight): How well retrieved contexts support reference answers
-- **Faithfulness** (25% weight): How well generated answers align with retrieved contexts  
-- **Answer Relevancy** (25% weight): How relevant generated answers are to questions
-- **Context Precision** (10% weight): Precision of retrieved contexts
-
-### Custom Metric
-- **DGM Technical Accuracy** (20% weight): Custom metric evaluating technical correctness of Deep Generative Models concepts
-
-### Overall Score
-Weighted combination: `0.20×context_recall + 0.25×faithfulness + 0.25×answer_relevancy + 0.10×context_precision + 0.20×dgm_technical_accuracy`
-
-## 🔍 Features
-
-### Custom Synthetic Data Generation
-- Domain-specific prompts for Deep Generative Models
-- Few-shot examples for VAEs, GANs, and Diffusion Models
-- Technical question generation focused on mathematical formulations
-
-### Structured Evaluation
-- LLM-as-a-Judge with JSON structured responses
-- Custom scoring criteria for technical accuracy
-- Comprehensive statistical analysis
-
-## 📈 Example Output
+## Example output
 
 ```
-🤖 DGM Study Assistant - RAGAS Evaluation
+DGM Study Assistant - RAGAS Evaluation
 ==================================================
 Custom RAGAS implementation with domain-specific metrics
 
@@ -115,59 +75,30 @@ Context Recall: 0.850
 Faithfulness: 0.721
 Answer Relevancy: 0.698
 Context Precision: 0.702
-DGM Technical Accuracy: 0.680
 
-✅ Evaluation completed successfully!
+Evaluation completed successfully.
 Results saved to: evaluation_results.json
-👍 Good RAG performance with room for improvement.
+Good RAG performance with room for improvement.
 ```
 
-## 🔧 Troubleshooting
+## Troubleshooting
 
-### Common Issues
+### Common issues
 
-**FAISS index not found**: 
+**FAISS index not found**:
 ```bash
-# Make sure to build the RAG system first from the main directory
-cd ..
-python -c "from src.dgm_study_assistant.rag.loader import build_rag_chain, get_embeddings; from src.dgm_study_assistant.llm.provider import get_llm; build_rag_chain(get_llm())"
+# Make sure the FAISS index exists at: ./faiss_index/index.faiss
 ```
 
 **Import errors**:
-```bash
-# Make sure you're in the evaluation directory
-cd evaluation
-python evaluate_rag.py --samples 5
-```
 
-**Memory issues**: Reduce `--samples` parameter for large datasets
+- Run from the repository root.
+- Use `uv run ...` (or ensure `PYTHONPATH` includes `./src`).
 
-**LLM not responding**: Check that your LLM is running and accessible via the configured provider
+**Slow runs**:
 
-## 🎯 Performance Interpretation
+- Start with small numbers (`-n 3` / `--hf-samples 3`) and scale up.
 
-- **Score ≥ 0.8**: Excellent RAG performance
-- **Score ≥ 0.6**: Good performance with room for improvement  
-- **Score < 0.6**: Consider improving:
-  - Document chunking strategy
-  - Retrieval parameters (k, similarity threshold)
-  - LLM model choice
-  - Prompt engineering
+**LLM not responding**:
 
-## 🔄 Workflow Integration
-
-This evaluation can be integrated into your development workflow:
-
-```bash
-# After making changes to your RAG system
-cd evaluation
-python evaluate_rag.py --samples 20 --save-results "experiment_$(date +%Y%m%d).json"
-```
-
-## 📚 Technical Implementation
-
-The evaluation follows patterns from advanced RAG evaluation notebooks:
-- Custom prompt engineering for domain-specific synthetic generation
-- Structured output evaluation with JSON validation
-- Multi-metric scoring with weighted combinations
-- Statistical analysis with mean, std, min, max reporting
+- Check that your configured provider is available (for Ollama, that the server is running and the model is pulled).

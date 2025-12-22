@@ -1,12 +1,8 @@
 #!/usr/bin/env python3
-"""Complete RAG Evaluation using customized RAGAS framework.
-Implements domain-specific synthetic data generation and evaluation metrics.
+"""CLI entry point for evaluating the RAG pipeline with RAGAS.
 
-Workflow:
-1. Generate synthetic DGM questions from existing vectorstore using custom prompts
-2. Run RAG chain on synthetic questions to get responses and contexts
-3. Evaluate using RAGAS metrics with custom DGM technical accuracy scoring
-4. Provide comprehensive analysis and actionable insights
+Generates synthetic questions from the existing vector store, runs the
+RAG chain, and scores the outputs with a small set of RAGAS metrics.
 """
 
 import argparse
@@ -16,13 +12,13 @@ from pathlib import Path
 
 # Add parent directory to path for imports
 parent_dir = Path(__file__).parent.parent
-sys.path.insert(0, str(parent_dir))
-sys.path.insert(0, str(parent_dir / "src"))
+repo_root = parent_dir.parent.parent
+sys.path.insert(0, str(repo_root / "src"))
 
-from src.evaluation import RAGEvaluator, SyntheticDataGenerator
-from src.dgm_study_assistant.rag.loader import build_rag_chain, get_embeddings, load_vectorstore
-from src.dgm_study_assistant.llm.provider import get_llm
-from src.dgm_study_assistant.config import settings
+from dgm_study_assistant.evaluation import RAGEvaluator, SyntheticDataGenerator
+from dgm_study_assistant.rag.loader import build_rag_chain, get_embeddings, load_vectorstore
+from dgm_study_assistant.llm.provider import get_llm
+from dgm_study_assistant.config import settings
 
 
 def setup_llm_and_embeddings():
@@ -63,7 +59,7 @@ def load_rag_system():
         rag_chain = build_rag_chain(llm)
         
         # Load vectorstore directly
-        vectorstore = load_vectorstore(embedding_model, str(parent_dir / "faiss_index"))
+        vectorstore = load_vectorstore(embedding_model, str(repo_root / "faiss_index"))
         
         print("RAG system loaded successfully!")
         return rag_chain, vectorstore, judge_llm, embedding_model
@@ -212,23 +208,20 @@ def main():
     
     args = parser.parse_args()
     
-    print("🤖 DGM Study Assistant - RAGAS Evaluation")
-    print("=" * 50)
-    print("Custom RAGAS implementation with domain-specific metrics")
-    print()
+    print("Starting RAG Evaluation...")
     
     # Load RAG system
     rag_chain, vectorstore, judge_llm, embedding_model = load_rag_system()
     
     if not all([rag_chain, judge_llm, embedding_model]):
-        print("❌ Failed to load RAG system. Exiting.")
+        print("Failed to load RAG system. Exiting.")
         return
     
     # Single question evaluation
     if args.question:
         evaluate_single_question(rag_chain, judge_llm, embedding_model, args.question)
         return
-    
+
     # Load or generate synthetic dataset
     if args.load_synthetic and Path(args.load_synthetic).exists():
         print(f"Loading synthetic dataset from {args.load_synthetic}")
@@ -244,7 +237,7 @@ def main():
             return
     else:
         if not vectorstore:
-            print("❌ Vectorstore required for synthetic data generation. Exiting.")
+            print("Vectorstore required for synthetic data generation. Exiting.")
             return
             
         synthetic_dataset = generate_synthetic_dataset(
@@ -256,7 +249,7 @@ def main():
         )
         
         if synthetic_dataset is None:
-            print("❌ Failed to generate synthetic dataset. Exiting.")
+            print("Failed to generate synthetic dataset. Exiting.")
             return
     
     # Run RAGAS evaluation
@@ -269,23 +262,10 @@ def main():
     )
     
     if results:
-        print(f"\n✅ Evaluation completed successfully!")
+        print(f"\nEvaluation completed successfully.")
         print(f"Results saved to: {args.save_results}")
-        
-        # Provide recommendations based on results
-        overall_score = results.get('overall_score', 0)
-        if overall_score >= 0.8:
-            print("\n🎉 Excellent RAG performance!")
-        elif overall_score >= 0.6:
-            print("\n👍 Good RAG performance with room for improvement.")
-        else:
-            print("\n⚠️  RAG performance needs improvement. Consider:")
-            print("   - Improving document chunking strategy")
-            print("   - Tuning retrieval parameters")
-            print("   - Using a more powerful LLM")
-            print("   - Improving prompt engineering")
     else:
-        print("❌ Evaluation failed.")
+        print("Evaluation failed.")
 
 
 if __name__ == "__main__":
