@@ -4,8 +4,7 @@ This folder contains a small CLI and helpers for evaluating the Study Assistant 
 
 It focuses on synthetic evaluation (SDG): generate questions from your own documents, run your RAG system, then score.
 
-
-<img width="700" height="700" alt="evaluation_flow" src="https://github.com/user-attachments/assets/8198aca2-1827-4c5f-813a-2fb470662d96" />
+<img width="700" height="700" alt="evaluation_flow" src="https://github.com/user-attachments/assets/a5a2d26d-ec2c-4d34-bb12-e196b62051cb" />
 
 ## Prerequisites
 
