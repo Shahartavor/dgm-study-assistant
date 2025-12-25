@@ -13,7 +13,11 @@ It focuses on synthetic evaluation (SDG): generate questions from your own docum
 
 ## Usage
 
-Run from the repository root.
+Evaluate the answer directly in the UI by toggling the evaluation button:
+
+<img width="300" height="40" alt="evaluate" src="https://github.com/user-attachments/assets/6da9865c-c11a-4c92-b34a-3dab6a2124d2" />
+
+Or Run from the repository root.
 
 ### Synthetic evaluation
 
