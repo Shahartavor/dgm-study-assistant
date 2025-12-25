@@ -1,5 +1,5 @@
 # Deep Generative Models Study Assistant
-<img width="300" height="300" alt="dgm_icon" src="https://github.com/user-attachments/assets/caa001a8-e406-4781-821f-5a833deaa9e3" />
+<img width="300" height="300" alt="dgm_icon" src="imgs/dgm_icon.png" />
 
 
 DGM Study Assistant is a Retrieval-Augmented Generation (RAG) system designed to help students learn Deep Generative Models.
@@ -14,9 +14,9 @@ The assistant can explain concepts, answer questions, and help with code example
 * Monte Carlo Methods
 * And additional topics taught throughout the course
 
-<img width="600" height="600" alt="assistant_view" src="https://github.com/user-attachments/assets/3f2d03b7-4056-4021-861a-eb04d1d0fd68" />
+<img width="600" height="600" alt="assistant_view" src="imgs/assistant_view.png" />
 
-<img width="700" height="700" alt="dgm_flow" src="https://github.com/user-attachments/assets/ca7fad15-6c3f-4271-a94c-34f91af839f4" />
+<img width="700" height="700" alt="dgm_flow" src="imgs/dgm_flow.png" />
 
 🧪 **RAG Evaluation**  
 See the detailed evaluation documentation here:  
