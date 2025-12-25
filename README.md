@@ -14,8 +14,13 @@ The assistant can explain concepts, answer questions, and help with code example
 * Monte Carlo Methods
 * And additional topics taught throughout the course
 
+<img width="600" height="600" alt="assistant_view" src="https://github.com/user-attachments/assets/3f2d03b7-4056-4021-861a-eb04d1d0fd68" />
+
 <img width="700" height="700" alt="dgm_flow" src="https://github.com/user-attachments/assets/ca7fad15-6c3f-4271-a94c-34f91af839f4" />
 
+🧪 **RAG Evaluation**  
+See the detailed evaluation documentation here:  
+[src/dgm_study_assistant/evaluation/README.md](src/dgm_study_assistant/evaluation/README.md)
 
 ## Installation 
 **Install uv**
