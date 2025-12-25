@@ -1,0 +1,87 @@
+{
+  "overall_results": {
+    "context_recall": {
+      "mean": 0.6666666666666666,
+      "std": 0.28867513459481287,
+      "min": 0.5,
+      "max": 1.0
+    },
+    "faithfulness": {
+      "mean": 0.9444444444444445,
+      "std": 0.0962250448649376,
+      "min": 0.8333333333333334,
+      "max": 1.0
+    },
+    "answer_relevancy": {
+      "mean": 0.3202751741243747,
+      "std": 0.5547328739863859,
+      "min": 0.0,
+      "max": 0.960825522373124
+    },
+    "context_precision": {
+      "mean": 0.999999999975,
+      "std": 0.0,
+      "min": 0.999999999975,
+      "max": 0.999999999975
+    }
+  },
+  "sample_count": 3,
+  "detailed_results": [
+    {
+      "user_input": "What are Deep Generative Models?",
+      "retrieved_contexts": [
+        "Deep Generative Models",
+        "Advanced Course on \nDeep Generative Models\nDan Rosenbaum",
+        "Learning a Generative Model",
+        "What are generative models?\n● High dimensional output \n● Probabilistic"
+      ],
+      "reference_contexts": [
+        "[00:41:57 - 00:41:59] זה תלוי במודל\n[00:42:02 - 00:42:02] אוקיי\n[00:42:07 - 00:42:10] בקורס יש את המילה Deep גם Deep Generative Models\n[00:42:11 - 00:42:19] Deep Generative Models אז באמת לתפוס התפלגות כזאת בממד מיליון זה משהו שהוא די קשה ודי קשה לחשוב על מודל טוב שעושה את זה\n[00:42:19 - 00:42:23] ואיך שעושים את זה בשנים האחרונות וכמו שאתם רואים בהצלחה די\n[00:42:24 - 00:42:25] די גבוהה\n[00:42:26 - 00:42:27] עם רשתות ניורונים.\n[00:42:28 - 00:42:31] בעצם הרשתות ניורונים הן חלק מהמודל ההסתברותי שלנו"
+      ],
+      "response": "Deep Generative Models are advanced models that learn a generative model. These models produce high-dimensional output and operate probabilistically. They are designed to capture the underlying structure of complex data distributions, allowing for the generation of new samples similar to those in the training dataset. The context provided outlines this concept without additional details or equations.",
+      "reference": "Deep Generative Models refer to models that aim to capture complex distributions, often in millions of dimensions. It's challenging and difficult to think of a good model that does this. In recent years, with the success rate being quite high, deep neural networks have been used. Essentially, these are part of our generative model.",
+      "context_recall": 0.5,
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.999999999975
+    },
+    {
+      "user_input": "How do diffusion models connect to variational inference, specifically in the context of optimizing ELBO (Evidence Lower BOund) for both posterior sampling and classifier guidance, and how does this relate to score-based models like Annealed Langevin Dynamics and Continuous Normalizing Flows?",
+      "retrieved_contexts": [
+        "Outline\n● Score Based Models\n○ Annealed Langevin Dynamics\n● Diffusion Models as Latent Variable Models\n○ ELBO\n○ DDPM\n● Connection to Continuous Normalizing Flows \n○ ODEs and SDEs\n○ Flow Matching",
+        "Outline\n● Score Based Models\n○ Annealed Langevin Dynamics\n● Diffusion Models as Latent Variable Models\n○ ELBO\n○ DDPM\n● Connection to Continuous Normalizing Flows \n○ ODEs and SDEs\n○ Flow Matching",
+        "Outline\n● Score Based Models\n○ Annealed Langevin Dynamics\n● Diffusion Models as Latent Variable Models\n○ ELBO\n○ DDPM\n● Connection to Continuous Normalizing Flows \n○ ODEs and SDEs\n○ Flow Matching",
+        "Optimize via stochastic variational inference\nGradients through the expectations in the ELBO can be hard to compute. \nWe will see methods to do this.\nStochastic Variational Inference"
+      ],
+      "reference_contexts": [
+        "<1-hop>\n\nFlow Matching\nGeneralization of diffusion models:\n● Deﬁne a mapping from latent sample to data sample such that the \nmarginal distributions agree with:\np(x0),  p(xT)\n● Train the mapping  parameters by \nmatching the velocity vector for all\ntimesteps.\n● Can result in more efﬁcient \ntrajectories\n\nOutline\n● Diffusion models - Recap\n● Posterior sampling\n● Classiﬁer Guidance\n● Classiﬁer free Guidance\n● Course Summary\n\nOutline\n● Diffusion models - Recap\n● Posterior sampling\n● Classiﬁer Guidance\n● Classiﬁer free Guidance\n● Course Summary\n\nOutline\n● Score Based Models\n○ Annealed Langevin Dynamics\n● Diffusion Models as Latent Variable Models\n○ ELBO\n○ DDPM\n● Connection to Continuous Normalizing Flows \n○ ODEs and SDEs\n○ Flow Matching",
+        "<2-hop>\n\nTraining with Variational inference\nWhile not converged:\nWhile not converged:\n 𝝓i ←  update q𝝓(z | xi) to optimize ELBO\n𝜽 ← p𝜽(x | z ) to optimize ELBO\nDifferent parameter 𝝓i  for each data point xi\n\nMaximum Likelihood with Variational Inference\n\nAmortized inference\nThe double-loop optimization of variational inference is inefﬁcient in the setup \nof deep learning (we need many iterations and many data points)\nIdea: Learn one set of parameters that map each data point x to a posterior \ndistribution over z\nUse neural networks to parameterize a Gaussian distribution:\n q𝝓(z | x)= Ɲ(𝝁𝝓(x), diag(𝞼𝝓 (x))\n\nGenerative Adversarial Networks\nA GAN is deﬁned by two models:\n a generator and a discriminator."
+      ],
+      "response": "The provided course materials do not contain this information.",
+      "reference": "Diffusion models are closely connected to variational inference through their use of ELBO optimization. In the context provided, diffusion models utilize variational inference by learning a set of parameters that map each data point x to a Gaussian distribution q𝝓(z | x), which is parameterized as Ɲ(𝝁𝝓(x), diag(𝞼𝝓 (x))). This allows for efficient optimization of the ELBO, both in posterior sampling and classifier guidance scenarios. The connection extends further into score-based models such as Annealed Langevin Dynamics and Continuous Normalizing Flows, where the dynamics are governed by stochastic differential equations that align with the principles of variational inference.",
+      "context_recall": 1.0,
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.999999999975
+    },
+    {
+      "user_input": "How does the combination of Variational AutoEncoder and GAN loss in Denoising Diffusion Prior impact the training process of deep generative models like PixelCNN and VAEs, especially when considering KL divergence, variational lower bound (ELBO), amortized Variational Inference, and the use of masks that imply a DAG structure?",
+      "retrieved_contexts": [
+        "Combining Different Approaches \nLatent Diffusion\nVariational AutoEncoder + GAN loss Denoising Diffusion Prior",
+        "Today\n● KL divergence\n● The variational lower bound (ELBO)\n● Variational inference methods\n● Amortized Variational Inference\n● Variational Autoencoder (VAE)",
+        "Advanced Course on \nDeep Generative Models\nLecture 6: Variational Inference, \n Variational Autoencoder (VAE)\n Dan Rosenbaum,  CS Haifaslides adapted from www.inf.ed.ac.uk/teaching/courses/pmr",
+        "Recap - Variational Autoencoders\n● Combine simple models into more ﬂexible ones:\np(x) = ∫pθ(x|z)p(z)dz  with “simple” models pθ(x|z), p(z)\n● Train via amortized variational inference using an inference network to \napproximate the posterior q𝝓(z | x)\n● Directed model permits efﬁcient generation: z ∼ p(z), x ∼ pθ(x|z)\n● Problem: samples are usually blurry\nZ X\np𝞱(Z) p𝞱(X|Z)"
+      ],
+      "reference_contexts": [
+        "<1-hop>\n\nCombining Different Approaches \nLatent Diffusion\nVariational AutoEncoder + GAN loss Denoising Diffusion Prior\n\nAdvanced Course on \nDeep Generative Models\nLecture 6: Variational Inference, \n Variational Autoencoder (VAE)\n Dan Rosenbaum,  CS Haifaslides adapted from www.inf.ed.ac.uk/teaching/courses/pmr\n\nToday\n● KL divergence\n● The variational lower bound (ELBO)\n● Variational inference methods\n● Amortized Variational Inference\n● Variational Autoencoder (VAE)\n\nMADE: Masked Autoencoder for Distribution Estimation\nUse masks that imply a DAG structure"
+      ],
+      "response": "The combination of Variational AutoEncoder (VAE) and GAN loss in the context of Denoising Diffusion Prior impacts the training process of deep generative models like PixelCNN and VAEs by influencing the KL divergence, variational lower bound (ELBO), amortized Variational Inference, and the use of masks that imply a Directed Acyclic Graph (DAG) structure. This integration aims to enhance the generation quality while maintaining efficient inference through the proposed model's architecture.",
+      "reference": "The combination of Variational AutoEncoder and GAN loss in Denoising Diffusion Prior impacts the training process of deep generative models like PixelCNN and VAEs by leveraging KL divergence, variational lower bound (ELBO), and amortized Variational Inference. These methods help optimize the model's ability to generate data distributions while maintaining a structured approach through masks that imply a DAG structure.",
+      "context_recall": 0.5,
+      "faithfulness": 0.8333333333333334,
+      "answer_relevancy": 0.960825522373124,
+      "context_precision": 0.999999999975
+    }
+  ],
+  "overall_score": 0.6960825522335624
+}

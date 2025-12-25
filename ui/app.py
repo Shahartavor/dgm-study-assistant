@@ -6,6 +6,9 @@ from dgm_study_assistant.rag.loader import build_rag_chain
 
 from dgm_study_assistant.rag.loader import get_slide_image_from_metadata
 
+from dgm_study_assistant.evaluation import RAGEvaluator
+from dgm_study_assistant.rag.loader import get_embeddings
+
 SYSTEM_MESSAGE = SystemMessage(content="""
 You are a helpful assistant specialized in Deep Generative Models (DGM).
 Focus on topics such as VAEs, GANs, Diffusion Models, Normalizing Flows, EM algorithm, GMMs, latent variable models, and score-based methods.
@@ -89,7 +92,7 @@ def add_user_message(message, history):
     return history, ""
 
 
-def get_bot_response(history):
+def get_bot_response(history, evaluate_answer=None):
     # If there's no new user message waiting for an answer, do nothing
     if not history or history[-1][1] is not None:
         # Also make sure slide is hidden in this "no-op" case
@@ -110,7 +113,41 @@ def get_bot_response(history):
         print("-------------------------")
 
     # Update chatbot last message with the answer
-    history[-1][1] = answer
+    final_answer = answer
+    if evaluate_answer:
+        evaluator = RAGEvaluator(
+            judge_llm=llm,
+            embedding_model=get_embeddings(),
+            rag_chain=rag_chain,
+        )
+
+        eval_result = evaluator.evaluate_single_sample(user_message)
+
+        if eval_result:
+            evaluation_text = ""
+            faith = eval_result.get("faithfulness")
+            relev = eval_result.get("answer_relevancy")
+            recall = eval_result.get("context_recall")
+            precision = eval_result.get("context_precision")
+
+            evaluation_lines = ["\n\n---\n### 🧪 Evaluation"]
+
+            evaluation_lines.append(
+                f"- **Context Recall**: {recall:.3f}" if recall is not None else "- **Context Recall**: N/A"
+            )
+            evaluation_lines.append(
+                f"- **Context Precision**: {precision:.3f}" if precision is not None else "- **Context Precision**: N/A"
+            )
+            evaluation_lines.append(
+                f"- **Faithfulness**: {faith:.3f}" if faith is not None else "- **Faithfulness**: N/A"
+            )
+            evaluation_lines.append(
+                f"- **Answer Relevancy**: {relev:.3f}" if relev is not None else "- **Answer Relevancy**: N/A"
+            )
+
+            evaluation_text = "\n".join(evaluation_lines)
+            final_answer += evaluation_text
+    history[-1][1] = final_answer
 
     # Try to find a slide image
     slide_path = None
@@ -186,7 +223,10 @@ def create_interface():
                         show_label=False
                     )
                     submit_btn = gr.Button("Send", variant="primary", scale=1)
-                
+                evaluate_toggle = gr.Checkbox(
+                    label="🧪 Evaluate Answer",
+                    value=False
+                )
                 clear_btn = gr.Button("Clear Chat", variant="secondary", size="sm")
             
             # Recommendations sidebar
@@ -211,12 +251,12 @@ def create_interface():
         
         # Wire up event handlers
         _setup_event_handlers(submit_btn, query_box, chatbot,slide_viewer, clear_btn,
-                             recommendation_buttons, refresh_btn)
+                             recommendation_buttons, refresh_btn,evaluate_toggle)
     
     return demo
 
 def _setup_event_handlers(submit_btn, query_box, chatbot, slide_viewer,clear_btn,
-                         recommendation_buttons, refresh_btn):
+                         recommendation_buttons, refresh_btn,evaluate_toggle):
     """Configure all event handlers for the interface."""
     # Submit handlers (both button and Enter key)
     submit_btn.click(
@@ -225,8 +265,8 @@ def _setup_event_handlers(submit_btn, query_box, chatbot, slide_viewer,clear_btn
         outputs=[chatbot, query_box]
     ).then(
         fn=get_bot_response,
-        inputs=[chatbot],
-        outputs=[chatbot,slide_viewer]
+        inputs=[chatbot, evaluate_toggle],
+        outputs=[chatbot, slide_viewer]
     )
     
     query_box.submit(
@@ -235,8 +275,8 @@ def _setup_event_handlers(submit_btn, query_box, chatbot, slide_viewer,clear_btn
         outputs=[chatbot, query_box]
     ).then(
         fn=get_bot_response,
-        inputs=[chatbot],
-        outputs=[chatbot,slide_viewer]
+        inputs=[chatbot, evaluate_toggle],
+        outputs=[chatbot, slide_viewer]
     )
     
     # Clear chat handler
