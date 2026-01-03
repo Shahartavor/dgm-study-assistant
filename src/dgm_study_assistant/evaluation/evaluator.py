@@ -1,7 +1,5 @@
 """RAG evaluator built on RAGAS metrics."""
 
-import asyncio
-import nest_asyncio
 from typing import Dict, List, Any, Optional
 import pandas as pd
 
@@ -9,10 +7,6 @@ from ragas import evaluate, EvaluationDataset
 from ragas.metrics import LLMContextRecall, Faithfulness, AnswerRelevancy, ContextPrecision
 from ragas.llms import LangchainLLMWrapper
 from ragas.embeddings import LangchainEmbeddingsWrapper
-
-# Apply nest_asyncio to handle nested async loops
-nest_asyncio.apply()
-asyncio.set_event_loop_policy(asyncio.DefaultEventLoopPolicy())
 
 
 class RAGEvaluator:
@@ -172,6 +166,10 @@ class RAGEvaluator:
         try:
             print("Starting RAGAS evaluation...")
             
+            # Apply nest_asyncio only when evaluation is actually needed
+            import nest_asyncio
+            nest_asyncio.apply()
+            
             # Run evaluation with all metrics
             results = evaluate(
                 dataset=evaluation_dataset,
@@ -282,6 +280,10 @@ class RAGEvaluator:
             }])
             
             dataset = EvaluationDataset.from_pandas(eval_data)
+            
+            # Apply nest_asyncio only when evaluation is actually needed
+            import nest_asyncio
+            nest_asyncio.apply()
             
             # Evaluate
             results = evaluate(

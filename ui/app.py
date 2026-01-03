@@ -6,9 +6,6 @@ from dgm_study_assistant.rag.loader import build_rag_chain
 
 from dgm_study_assistant.rag.loader import get_slide_image_from_metadata
 
-from dgm_study_assistant.evaluation import RAGEvaluator
-from dgm_study_assistant.rag.loader import get_embeddings
-
 SYSTEM_MESSAGE = SystemMessage(content="""
 You are a helpful assistant specialized in Deep Generative Models (DGM).
 Focus on topics such as VAEs, GANs, Diffusion Models, Normalizing Flows, EM algorithm, GMMs, latent variable models, and score-based methods.
@@ -33,7 +30,7 @@ STRICT RAG GROUNDING RULES (CRITICAL)
 ====================================================================
 Before answering, you MUST check whether the user's question is covered by the transcript/context provided by the RAG system.
 
-You MUST follow one of the two response formats below:
+You MUST follow one of these two response formats below:
 
 1. If the answer **is supported by the transcript/context**, then begin your answer with:
    "### From transcript:"
@@ -88,17 +85,18 @@ def add_user_message(message, history):
     if not message.strip():
         return history, ""
     
-    history.append([message, None])
+    # Add message in the new format
+    history.append({"role": "user", "content": message})
     return history, ""
 
 
 def get_bot_response(history, evaluate_answer=None):
     # If there's no new user message waiting for an answer, do nothing
-    if not history or history[-1][1] is not None:
-        # Also make sure slide is hidden in this "no-op" case
-        return history, gr.update(visible=False, value=None)
+    if not history or history[-1].get("role") != "user":
+        # Also make sure slide and source are hidden in this "no-op" case
+        return history, gr.update(visible=False, value=None), gr.update(visible=False, value="")
 
-    user_message = history[-1][0]
+    user_message = history[-1]["content"]
 
     # Run the full RAG chain
     result = rag_chain.invoke({"question": user_message})
@@ -115,6 +113,10 @@ def get_bot_response(history, evaluate_answer=None):
     # Update chatbot last message with the answer
     final_answer = answer
     if evaluate_answer:
+        # Import evaluation module only when needed to avoid nest_asyncio issues
+        from dgm_study_assistant.evaluation import RAGEvaluator
+        from dgm_study_assistant.rag.loader import get_embeddings
+        
         evaluator = RAGEvaluator(
             judge_llm=llm,
             embedding_model=get_embeddings(),
@@ -124,59 +126,91 @@ def get_bot_response(history, evaluate_answer=None):
         eval_result = evaluator.evaluate_single_sample(user_message)
 
         if eval_result:
-            evaluation_text = ""
+            evaluation_lines = ["\n\n---\n### 🧪 Evaluation"]
+            
+            # Helper function to format metric values
+            def format_metric(value, name):
+                if value is not None:
+                    return f"- **{name}**: {value:.3f}"
+                else:
+                    return f"- **{name}**: *Unable to calculate*"
+            
             faith = eval_result.get("faithfulness")
             relev = eval_result.get("answer_relevancy")
             recall = eval_result.get("context_recall")
             precision = eval_result.get("context_precision")
 
-            evaluation_lines = ["\n\n---\n### 🧪 Evaluation"]
-
-            evaluation_lines.append(
-                f"- **Context Recall**: {recall:.3f}" if recall is not None else "- **Context Recall**: N/A"
-            )
-            evaluation_lines.append(
-                f"- **Context Precision**: {precision:.3f}" if precision is not None else "- **Context Precision**: N/A"
-            )
-            evaluation_lines.append(
-                f"- **Faithfulness**: {faith:.3f}" if faith is not None else "- **Faithfulness**: N/A"
-            )
-            evaluation_lines.append(
-                f"- **Answer Relevancy**: {relev:.3f}" if relev is not None else "- **Answer Relevancy**: N/A"
-            )
+            evaluation_lines.append(format_metric(recall, "Context Recall"))
+            evaluation_lines.append(format_metric(precision, "Context Precision"))
+            evaluation_lines.append(format_metric(faith, "Faithfulness"))
+            evaluation_lines.append(format_metric(relev, "Answer Relevancy"))
+            
+            # Add explanation for unavailable metrics
+            unavailable_count = sum([recall is None, precision is None, faith is None, relev is None])
+            if unavailable_count > 0:
+                evaluation_lines.append("\n*Some metrics couldn't be calculated. This may be due to:")
+                evaluation_lines.append("  - Insufficient context information")
+                evaluation_lines.append("  - LLM processing limitations")
+                evaluation_lines.append("  - Missing reference data for comparison*")
 
             evaluation_text = "\n".join(evaluation_lines)
             final_answer += evaluation_text
-    history[-1][1] = final_answer
+    history[-1] = {"role": "assistant", "content": final_answer}
 
-    # Try to find a slide image
+    # Try to find a slide image and its source
     slide_path = None
-    for doc in docs:
-        slide_path = get_slide_image_from_metadata(doc.metadata)
-        if slide_path:
-            break
-
+    slide_source_text = ""
+    
+    if docs:
+        source_info = []
+        unique_sources = set()
+        
+        for doc in docs:
+            metadata = doc.metadata
+            if metadata.get("source") == "slides":
+                pdf_stem = metadata.get("pdf_stem", "Unknown")
+                page = metadata.get("page", "Unknown")
+                source_key = f"{pdf_stem}"
+                
+                if source_key not in unique_sources:
+                    unique_sources.add(source_key)
+                    # Format the pdf_stem to be more readable
+                    formatted_name = pdf_stem.replace("_", " ").title()
+                    source_info.append(f"📄 **{formatted_name}** (Page {page})")
+            
+            # Get slide image
+            if not slide_path:
+                slide_path = get_slide_image_from_metadata(doc.metadata)
+        
+        if source_info:
+            slide_source_text = "### Source\n" + "\n".join(source_info)
+    
     if slide_path:
         # Show the image + set value
         slide_update = gr.update(visible=True, value=slide_path)
+        source_update = gr.update(visible=True, value=slide_source_text)
     else:
-        # Hide the component + clear any previous image
+        # Hide the components
         slide_update = gr.update(visible=False, value=None)
+        source_update = gr.update(visible=False, value="")
 
-    return history, slide_update
+    return history, slide_update, source_update
 
 
 def clear_chat():
     """Clear chat history and reset input box."""
-    return [], "", gr.update(visible=False, value=None)
+    return [], "", gr.update(visible=False, value=None), gr.update(visible=False, value="")
+
 
 def get_random_recommendations(num=5):
     """Get (random) sample of recommended questions."""
     return random.sample(RECOMMENDED_QUESTIONS, min(num, len(RECOMMENDED_QUESTIONS)))
 
+
 def use_recommended_question(question):
     """Fill the input box with selected recommended question."""
     return question
+
 
 def refresh_recommendations():
     """Generate new set of random recommendations."""
@@ -199,8 +233,8 @@ def create_interface():
                     height=500,
                     show_copy_button=True,
                     show_copy_all_button=False,
-                    bubble_full_width=False,
                     render_markdown=True,
+                    type='messages',
                     latex_delimiters=[
                         {"left": "$$", "right": "$$", "display": True},
                         {"left": "$", "right": "$", "display": False}
@@ -212,6 +246,10 @@ def create_interface():
                     visible=False,
                     height=350,
                     interactive=False
+                )
+                slide_source = gr.Markdown(
+                    visible=False,
+                    elem_id="slide_source"
                 )
                 # Input area
                 with gr.Row():
@@ -250,13 +288,13 @@ def create_interface():
                 refresh_btn = gr.Button("🔄 New Questions", size="sm", variant="outline")
         
         # Wire up event handlers
-        _setup_event_handlers(submit_btn, query_box, chatbot,slide_viewer, clear_btn,
-                             recommendation_buttons, refresh_btn,evaluate_toggle)
+        _setup_event_handlers(submit_btn, query_box, chatbot, slide_viewer, slide_source, clear_btn,
+                             recommendation_buttons, refresh_btn, evaluate_toggle)
     
     return demo
 
-def _setup_event_handlers(submit_btn, query_box, chatbot, slide_viewer,clear_btn,
-                         recommendation_buttons, refresh_btn,evaluate_toggle):
+def _setup_event_handlers(submit_btn, query_box, chatbot, slide_viewer, slide_source, clear_btn,
+                         recommendation_buttons, refresh_btn, evaluate_toggle):
     """Configure all event handlers for the interface."""
     # Submit handlers (both button and Enter key)
     submit_btn.click(
@@ -266,7 +304,7 @@ def _setup_event_handlers(submit_btn, query_box, chatbot, slide_viewer,clear_btn
     ).then(
         fn=get_bot_response,
         inputs=[chatbot, evaluate_toggle],
-        outputs=[chatbot, slide_viewer]
+        outputs=[chatbot, slide_viewer, slide_source]
     )
     
     query_box.submit(
@@ -276,13 +314,13 @@ def _setup_event_handlers(submit_btn, query_box, chatbot, slide_viewer,clear_btn
     ).then(
         fn=get_bot_response,
         inputs=[chatbot, evaluate_toggle],
-        outputs=[chatbot, slide_viewer]
+        outputs=[chatbot, slide_viewer, slide_source]
     )
     
     # Clear chat handler
     clear_btn.click(
         fn=clear_chat,
-        outputs=[chatbot, query_box,slide_viewer]
+        outputs=[chatbot, query_box, slide_viewer, slide_source]
     )
     
     # Recommendation button handlers

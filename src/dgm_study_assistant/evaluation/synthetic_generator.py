@@ -3,8 +3,6 @@ Synthetic Data Generation using RAGAS TestsetGenerator.
 Simplified implementation using core RAGAS functionality.
 """
 
-import asyncio
-import nest_asyncio
 from typing import List, Optional
 from pathlib import Path
 
@@ -12,10 +10,6 @@ from langchain_core.documents import Document
 from ragas.testset import TestsetGenerator
 from ragas.llms import LangchainLLMWrapper
 from ragas.embeddings import LangchainEmbeddingsWrapper
-
-# Apply nest_asyncio to handle nested async loops
-nest_asyncio.apply()
-asyncio.set_event_loop_policy(asyncio.DefaultEventLoopPolicy())
 
 
 class SyntheticDataGenerator:
@@ -139,6 +133,10 @@ class SyntheticDataGenerator:
         """
         try:
             print(f"Generating {testset_size} synthetic samples from {len(documents)} documents...")
+            
+            # Apply nest_asyncio only when generation is actually needed
+            import nest_asyncio
+            nest_asyncio.apply()
             
             # Generate synthetic dataset using default RAGAS configuration
             generated_test_set = self.generator.generate_with_langchain_docs(
