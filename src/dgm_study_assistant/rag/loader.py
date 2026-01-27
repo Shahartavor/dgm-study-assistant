@@ -44,27 +44,32 @@ def load_slides():
 
 
 def load_transcripts():
+    """Load transcript files."""
     base_dir = Path(__file__).parent / "data" / "gen_transcripts"
-    print("Looking for transcripts in:", base_dir)
     docs = []
+    
     for file in base_dir.glob("*.txt"):
-        print("Loading:", file)
-        docs.extend(TextLoader(str(file)).load())
-    print("Loaded", len(docs), "documents.")
+        try:
+            loader = TextLoader(str(file), encoding='utf-8')
+            docs.extend(loader.load())
+        except UnicodeDecodeError:
+            try:
+                # Try with latin-1 as fallback
+                loader = TextLoader(str(file), encoding='latin-1')
+                docs.extend(loader.load())
+            except Exception as e:
+                print(f"Skipping {file}: {e}")
+        except Exception as e:
+            print(f"Skipping {file}: {e}")
+    
+    print(f"Loaded {len(docs)} transcript documents")
     return docs
-
-def embed_documents_in_batches(embedding_model, docs, batch_size=32):
-    vectors = []
-    for i in range(0, len(docs), batch_size):
-        batch = [d.page_content for d in docs[i:i+batch_size]]
-        vectors.extend(embedding_model.embed_documents(batch))
-    return vectors
 
 def split_docs(docs):
     splitter = RecursiveCharacterTextSplitter(
-        chunk_size=600,
-        chunk_overlap=80,
-        separators=["\n\n", "\n", ".", " ", ""],
+        chunk_size=1200,
+        chunk_overlap=200,
+        separators=["\n\n", "\n", ". ", " ", ""],
     )
     return splitter.split_documents(docs)
 
@@ -73,6 +78,7 @@ def get_embeddings():
 
 
 def build_vectorstore(docs, embedding_model, save_path="faiss_index", batch_size=32):
+        
     texts = [d.page_content for d in docs]
     metadatas = [d.metadata for d in docs]
 
@@ -103,12 +109,28 @@ def load_vectorstore(embeddings, save_path="faiss_index"):
 def create_retriever(vectorstore):
     return vectorstore.as_retriever(
         search_type="similarity",
-        k=7
+        search_kwargs={"k": 5}
     )
 
 def format_docs(docs):
-    """Convert retrieved Document objects into a single text block."""
-    return "\n\n".join(doc.page_content for doc in docs)
+    """Convert retrieved Document objects into a single text block with source labels."""
+    formatted_docs = []
+    for i, doc in enumerate(docs):
+        metadata = doc.metadata
+        source = metadata.get("source", "unknown")
+        
+        if source == "slides":
+            pdf_stem = metadata.get("pdf_stem", "Unknown")
+            page = metadata.get("page", "Unknown")
+            header = f"[Slide {pdf_stem} - Page {page}]"
+        elif source == "transcripts":
+            header = f"[Transcript - Document {i+1}]"
+        else:
+            header = f"[Source {i+1}]"
+        
+        formatted_docs.append(f"{header}\n{doc.page_content}")
+    
+    return "\n\n---\n\n".join(formatted_docs)
 
 def get_slide_image_from_metadata(metadata):
     if metadata.get("source") != "slides":
@@ -131,6 +153,12 @@ def get_slide_image_from_metadata(metadata):
 
 
 def build_rag_chain(llm):
+    """
+    Build the RAG chain for question answering.
+    
+    Args:
+        llm: Language model to use
+    """
     embedding_model = get_embeddings()
     #save_path = "faiss_index_transcripts"
     save_path = "faiss_index"
@@ -145,29 +173,35 @@ def build_rag_chain(llm):
         #docs = transcript_docs
         chunks = split_docs(docs)
         vectorstore = build_vectorstore(chunks, embedding_model,save_path)
-
+    
+    print("Using standard retrieval...")
     retriever = create_retriever(vectorstore)
-    #create_retriever
+    
     context_prompt = ChatPromptTemplate.from_template(
-        """
-        You are a Deep Generative Models (DGM) tutor.
+        """You are a Deep Generative Models (DGM) tutor. Answer the question based on the provided context.
 
-        YOU MUST ANSWER USING ONLY THE CONTEXT BELOW.
-        If the context does not contain the answer, say:
-        "The provided course materials do not contain this information."
+CONTEXT:
+{context}
 
-        QUESTION:
-        {question}
+QUESTION:
+{question}
 
-        CONTEXT:
-        {context}
+Instructions:
+First, determine if this is a DGM-related question. DGM topics include: VAEs, GANs, Diffusion Models, EM algorithm, GMMs, Normalizing Flows, ELBO, variational inference, latent variables, likelihood, posterior, sampling, generation, autoregressive models, pixelCNN, score-based models.
 
-        RULES:
-        - USE EXACT TERMINOLOGY FROM THE CONTEXT.
-        - IF THE CONTEXT CONTAINS EQUATIONS, RETURN THEM EXACTLY AS THEY APPEAR.
-        - DO NOT USE PRIOR KNOWLEDGE.
-        - DO NOT ADD EXTRA INFORMATION.
-        """
+If NOT a DGM question, respond with exactly: "I can only help with questions about Deep Generative Models and related topics."
+
+If it IS a DGM question:
+- Use the context to provide the best answer possible
+- Extract and explain relevant information
+- Use quotes for important definitions
+- Cite sources as [Source 1], [Slide X] etc.
+- If context has limited information, provide what you can from the context
+- Do NOT add the refusal message at the end
+
+Remember: For DGM questions, provide helpful answers. For non-DGM questions, refuse politely once.
+
+ANSWER:"""
     )
 
     chain = (

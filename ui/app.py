@@ -110,7 +110,7 @@ def get_bot_response(history, evaluate_answer=None):
         print(doc.page_content[:200])
         print("-------------------------")
 
-    # Update chatbot last message with the answer
+    # Append assistant message to chat history
     final_answer = answer
     if evaluate_answer:
         # Import evaluation module only when needed to avoid nest_asyncio issues
@@ -155,7 +155,7 @@ def get_bot_response(history, evaluate_answer=None):
 
             evaluation_text = "\n".join(evaluation_lines)
             final_answer += evaluation_text
-    history[-1] = {"role": "assistant", "content": final_answer}
+    history.append({"role": "assistant", "content": final_answer})
 
     # Try to find a slide image and its source
     slide_path = None
