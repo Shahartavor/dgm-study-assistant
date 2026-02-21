@@ -1,5 +1,5 @@
 # Deep Generative Models Study Assistant
-<img width="300" height="300" alt="dgm_icon" src="imgs/dgm_icon.png" />
+<img width="300" height="300" alt="dgm_icon" src="imgs/dgm_icon_assistant.png" />
 
 DGM Study Assistant is a Retrieval-Augmented Generation (RAG) system designed to help students learn Deep Generative Models. It retrieves information from course slides and transcripts, providing accurate answers with source citations.
 
