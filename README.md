@@ -68,6 +68,14 @@ source .venv/bin/activate  # or .venv\Scripts\activate on Windows
 
 `uv run ui/app.py`
 
+## Quick Start After Installation
+
+1. Make sure Ollama is installed and running
+2. Pull the required model: `ollama pull llama3.2:3b`
+3. Pull the embedding model: `ollama pull nomic-embed-text`
+4. Run the app: `uv run ui/app.py`
+5. Open http://localhost:7860 in your browser
+
 ## Recent Updates
 
 ### Improved Answer Quality
@@ -80,18 +88,6 @@ source .venv/bin/activate  # or .venv\Scripts\activate on Windows
 - Optimized answer length for concise yet complete responses
 - Improved source citation format with slide/page references
 
-### Code Cleanup
-- Removed unused advanced retrieval components
-- Simplified the codebase while maintaining performance
-- Streamlined the RAG pipeline for better maintainability
-
-## Quick Start
-
-1. Make sure Ollama is installed and running
-2. Pull the required model: `ollama pull llama3.2:3b`
-3. Pull the embedding model: `ollama pull nomic-embed-text`
-4. Run the app: `uv run ui/app.py`
-5. Open http://localhost:7860 in your browser
 
 ## Tips for Best Results
 
