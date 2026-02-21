@@ -18,6 +18,8 @@ Evaluate the answer directly in the UI by toggling the evaluation button:
 
 <img width="300" height="40" alt="evaluate" src="../../../imgs/evaluate.png" />
 
+**In the interactive (single-question) setting, only Faithfulness and Answer Relevancy are computed, since no reference answer or reference contexts are available.**
+
 Or Run from the repository root.
 
 ### Synthetic evaluation

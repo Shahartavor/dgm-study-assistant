@@ -1,5 +1,7 @@
 import gradio as gr
 import random
+
+import pandas as pd
 from dgm_study_assistant.llm.provider import get_llm
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from dgm_study_assistant.rag.loader import build_rag_chain
@@ -113,6 +115,7 @@ def get_bot_response(history, evaluate_answer=None):
     # Append assistant message to chat history
     final_answer = answer
     if evaluate_answer:
+
         # Import evaluation module only when needed to avoid nest_asyncio issues
         from dgm_study_assistant.evaluation import RAGEvaluator
         from dgm_study_assistant.rag.loader import get_embeddings
@@ -124,7 +127,7 @@ def get_bot_response(history, evaluate_answer=None):
         )
 
         eval_result = evaluator.evaluate_single_sample(user_message)
-
+        print(f"eval_result: {eval_result}")
         if eval_result:
             evaluation_lines = ["\n\n---\n### 🧪 Evaluation"]
             
@@ -137,17 +140,13 @@ def get_bot_response(history, evaluate_answer=None):
             
             faith = eval_result.get("faithfulness")
             relev = eval_result.get("answer_relevancy")
-            recall = eval_result.get("context_recall")
-            precision = eval_result.get("context_precision")
 
-            evaluation_lines.append(format_metric(recall, "Context Recall"))
-            evaluation_lines.append(format_metric(precision, "Context Precision"))
+
             evaluation_lines.append(format_metric(faith, "Faithfulness"))
             evaluation_lines.append(format_metric(relev, "Answer Relevancy"))
             
             # Add explanation for unavailable metrics
-            unavailable_count = sum([recall is None, precision is None, faith is None, relev is None])
-            if unavailable_count > 0:
+            if pd.isna(faith) or pd.isna(relev):
                 evaluation_lines.append("\n*Some metrics couldn't be calculated. This may be due to:")
                 evaluation_lines.append("  - Insufficient context information")
                 evaluation_lines.append("  - LLM processing limitations")
