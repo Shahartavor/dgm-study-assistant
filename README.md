@@ -72,9 +72,10 @@ source .venv/bin/activate  # or .venv\Scripts\activate on Windows
 
 1. Make sure Ollama is installed and running
 2. Pull the required model: `ollama pull llama3.2:3b`
-3. Pull the embedding model: `ollama pull nomic-embed-text`
-4. Run the app: `uv run ui/app.py`
-5. Open http://localhost:7860 in your browser
+3. Pull the evaluation (judge) model: `ollama pull granite4:micro`
+4. Pull the embedding model: `ollama pull nomic-embed-text`
+5. Run the app: `uv run ui/app.py`
+6. Open http://localhost:7860 in your browser
 
 ## Recent Updates
 
