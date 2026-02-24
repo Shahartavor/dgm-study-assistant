@@ -45,7 +45,7 @@ uv run src/dgm_study_assistant/evaluation/evaluate_rag.py --question "What is th
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `--samples`, `-n` | synthetic samples to generate | 10 |
+| `--samples`, `-n` | synthetic samples to generate (may yield multiple QA pairs) | 10 |
 | `--save-synthetic` | save synthetic dataset to JSON | None |
 | `--load-synthetic` | load an existing synthetic dataset JSON | None |
 | `--save-results` | save evaluation results JSON | `evaluation_results.json` |
