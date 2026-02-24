@@ -3,6 +3,8 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     llm_provider: str = "ollama"
     llm_model: str = "llama3.2:3b"
+    evaluation_llm_provider: str = "ollama"
+    evaluation_llm_model: str = "granite4:micro"
     #llm_model: str = "granite4:micro"
     #llm_model: str  = "phi3:mini"
     llm_temperature: float = 0.1

@@ -17,7 +17,7 @@ sys.path.insert(0, str(repo_root / "src"))
 
 from dgm_study_assistant.evaluation import RAGEvaluator, SyntheticDataGenerator
 from dgm_study_assistant.rag.loader import build_rag_chain, get_embeddings, load_vectorstore
-from dgm_study_assistant.llm.provider import get_llm
+from dgm_study_assistant.llm.provider import get_llm,get_evaluation_llm
 from dgm_study_assistant.config import settings
 
 
@@ -30,11 +30,11 @@ def setup_llm_and_embeddings():
         # Get embedding model
         embedding_model = get_embeddings()
         
-        # For evaluation, we'll use the same LLM as judge
-        # In production, you might want a more powerful judge LLM
-        judge_llm = llm
+        # For evaluation, we'll use a more powerful judge LLM
+        judge_llm = get_evaluation_llm()
         
         print(f"Using LLM: {settings.llm_provider}/{settings.llm_model}")
+        print(f"Using Judge LLM: {settings.evaluation_llm_provider}/{settings.evaluation_llm_model}")
         print(f"Using embeddings: nomic-embed-text")
         
         return llm, embedding_model, judge_llm
@@ -92,7 +92,8 @@ def generate_synthetic_dataset(vectorstore, judge_llm, embedding_model,
             testset_size=num_samples,
             use_specific_synthesizer=True  # Using domain-specific synthesizer
         )
-        
+
+
         if synthetic_dataset is None:
             print("Failed to generate synthetic dataset!")
             return None

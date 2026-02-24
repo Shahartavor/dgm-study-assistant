@@ -31,4 +31,19 @@ def get_llm():
             temperature=settings.llm_temperature,
         )
 
+
+
+def get_evaluation_llm():
+    provider = settings.evaluation_llm_provider.lower()
+
+    if provider == "ollama":
+        return ChatOllama(
+            model=settings.evaluation_llm_model,
+            base_url=settings.ollama_base_url,
+            temperature=0,  # deterministic
+            timeout=settings.llm_timeout,
+            keep_alive=300,
+            format="json",  # critical for structured output
+
+        )
     raise ValueError(f"Unknown LLM provider: {provider}")
